@@ -371,7 +371,7 @@ if (!isset($ip) or $ui->escaped('SERVER_ADDR', 'server') == $ip or in_array($ip,
             $shutdownemptytime = 0;
             $notified = 0;
 
-            $query = $sql->prepare("SELECT s.`id` AS `serverID`,t.`description`,t.`gamebinary`,l.`id` AS `lend_id`,l.`started` AS `lend_started`,g.* FROM `gsswitch` g INNER JOIN `serverlist` s ON g.`serverid`=s.`id` INNER JOIN `servertypes` t ON s.`servertype`=t.`id` LEFT JOIN `lendedserver` AS l ON l.`serverid`=s.`id` WHERE g.`id`=? LIMIT 1");
+            $query = $sql->prepare("SELECT s.`id` AS `serverID`,t.`id` AS `templateID`,t.`description` AS `templateDescription`,t.`gamebinary`,l.`id` AS `lend_id`,l.`started` AS `lend_started`,g.* FROM `gsswitch` g INNER JOIN `serverlist` s ON g.`serverid`=s.`id` INNER JOIN `servertypes` t ON s.`servertype`=t.`id` LEFT JOIN `lendedserver` AS l ON l.`serverid`=s.`id` WHERE g.`id`=? LIMIT 1");
             $query->execute(array($switchID));
             while ($row = $query->fetch(PDO::FETCH_ASSOC)) {
 
@@ -379,7 +379,7 @@ if (!isset($ip) or $ui->escaped('SERVER_ADDR', 'server') == $ip or in_array($ip,
                 $autoRestart = $row['autoRestart'];
                 $port = $row['port'];
                 $address = $row['serverip'] . ':' . $row['port'];
-                $gametype = $row['description'];
+                $gametype = $row['templateDescription'];
                 $notified = $row['notified'];
                 $secnotified = $row['secnotified'];
                 $lendserver = $row['lendserver'];
@@ -549,6 +549,9 @@ if (!isset($ip) or $ui->escaped('SERVER_ADDR', 'server') == $ip or in_array($ip,
                 }
 
                 if ($notified > 0) {
+
+                    $notified = 0;
+
                     $query = $sql->prepare("UPDATE `gsswitch` SET `notified`=0 WHERE `id`=? LIMIT 1");
                     $query->execute(array($switchID));
                 }
@@ -661,7 +664,7 @@ if (!isset($ip) or $ui->escaped('SERVER_ADDR', 'server') == $ip or in_array($ip,
 
                 if ($tsdnsDownCheck == $resellersettings[$resellerid]['down_checks']) {
 
-                    if ($resellerid==0) {
+                    if ($resellerid == 0) {
                         $query3 = $sql->prepare("SELECT `id`,`mail_serverdown` FROM `userdata` WHERE `accounttype`='a' AND `resellerid`=0");
                         $query3->execute();
                     } else {
@@ -746,8 +749,8 @@ if (!isset($ip) or $ui->escaped('SERVER_ADDR', 'server') == $ip or in_array($ip,
             $latestVersion = $vrow['latest_version'];
 
             if ($addedby == 1) {
-                $vselect2 = $sql->prepare("SELECT `ip` FROM `rserverdata` WHERE `id`=? AND `resellerid`=? LIMIT 1");
-                $vselect2->execute(array($vrow['rootid'], $resellerid));
+                $vselect2 = $sql->prepare("SELECT `ip` FROM `rserverdata` WHERE `id`=? LIMIT 1");
+                $vselect2->execute(array($vrow['rootid']));
                 $queryip = $vselect2->fetchColumn();
             } else {
                 $queryip = $vrow['ssh2ip'];
@@ -833,6 +836,7 @@ if (!isset($ip) or $ui->escaped('SERVER_ADDR', 'server') == $ip or in_array($ip,
 
                     $query2 = $sql->prepare("UPDATE `voice_server` SET `uptime`=0 WHERE `masterserver`=?");
                     $query2->execute(array($ts3masterid));
+
                     $query2 = $sql->prepare("UPDATE `voice_masterserver` SET `notified`=? WHERE `id`=? LIMIT 1");
                     $query2->execute(array($ts3masternotified, $ts3masterid));
 
@@ -927,8 +931,8 @@ if (!isset($ip) or $ui->escaped('SERVER_ADDR', 'server') == $ip or in_array($ip,
                             $vs = $server['virtualserver_status'];
                             $uptime = (isset($server['virtualserver_uptime'])) ? $server['virtualserver_uptime'] : 0;
 
-                            $vselect2 = $sql->prepare("SELECT v.*,u.`active` AS `user_active` FROM `voice_server` AS v INNER JOIN `userdata` u ON u.`id`=v.`userid` WHERE v.`localserverid`=? AND v.`masterserver`=? AND v.`resellerid`=? LIMIT 1");
-                            $vselect2->execute(array($virtualserver_id, $vrow['id'], $resellerid));
+                            $vselect2 = $sql->prepare("SELECT v.*,u.`active` AS `user_active` FROM `voice_server` AS v INNER JOIN `userdata` u ON u.`id`=v.`userid` WHERE v.`localserverid`=? AND v.`masterserver`=? LIMIT 1");
+                            $vselect2->execute(array($virtualserver_id, $vrow['id']));
                             foreach ($vselect2->fetchall(PDO::FETCH_ASSOC) as $vrow2) {
                                 $autoRestart = $vrow2['autoRestart'];
                                 $queryName = $vrow2['queryName'];
@@ -975,8 +979,8 @@ if (!isset($ip) or $ui->escaped('SERVER_ADDR', 'server') == $ip or in_array($ip,
 
                                 if ($lendserver == 'Y') {
 
-                                    $vselect2 = $sql->prepare("SELECT `slots` FROM `lendedserver` WHERE `servertype`='v' AND `serverid`=? AND `resellerid`=? LIMIT 1");
-                                    $vselect2->execute(array($ts3id, $resellerid));
+                                    $vselect2 = $sql->prepare("SELECT `slots` FROM `lendedserver` WHERE `servertype`='v' AND `serverid`=? LIMIT 1");
+                                    $vselect2->execute(array($ts3id));
                                     $lendslots = $vselect2->fetchColumn();
                                 } else {
                                     $lendslots = 0;
@@ -1246,8 +1250,8 @@ if (!isset($ip) or $ui->escaped('SERVER_ADDR', 'server') == $ip or in_array($ip,
                                     $flagPassword = 'Y';
                                 }
 
-                                $query2 = $sql->prepare("UPDATE `voice_server` SET `usedslots`=?,`uptime`=?,`notified`=?,`filetraffic`=?,`lastfiletraffic`=?,`queryName`=?,`queryNumplayers`=?,`queryMaxplayers`=?,`queryPassword`=?,`queryUpdatetime`=NOW() WHERE `id`=? AND `resellerid`=? LIMIT 1");
-                                $query2->execute(array($usedslots, $uptime, $newnotified, $newtraffic, $newtrafficdata, $queryName,((isset($server['virtualserver_clientsonline'])) ? $server['virtualserver_clientsonline'] : 0 - 1),(isset($server['virtualserver_maxclients'])) ? $server['virtualserver_maxclients'] : 0, $flagPassword, $ts3id, $resellerid));
+                                $query2 = $sql->prepare("UPDATE `voice_server` SET `usedslots`=?,`uptime`=?,`notified`=?,`filetraffic`=?,`lastfiletraffic`=?,`queryName`=?,`queryNumplayers`=?,`queryMaxplayers`=?,`queryPassword`=?,`queryUpdatetime`=NOW() WHERE `id`=? LIMIT 1");
+                                $query2->execute(array($usedslots, $uptime, $newnotified, $newtraffic, $newtrafficdata, $queryName,((isset($server['virtualserver_clientsonline'])) ? $server['virtualserver_clientsonline'] : 0 - 1),(isset($server['virtualserver_maxclients'])) ? $server['virtualserver_maxclients'] : 0, $flagPassword, $ts3id));
                             }
 
                             if (isset($args['coolDown'])) {

@@ -79,7 +79,7 @@ if ($ui->st('w', 'get') == 'lo') {
 
     if (isset($ui->server['HTTP_REFERER'])) {
         $refstring = explode('/', substr(str_replace(array('http://' . $ui->domain('HTTP_HOST', 'server'), 'https://' . $ui->domain('HTTP_HOST', 'server'), '//'), array('', '', '/'), strtolower($ui->server['HTTP_REFERER'])), strlen($ewInstallPath)));
-        $referrer = (isset($refstring[1])) ? explode('?',$refstring[1]) : '';
+        $referrer = (isset($refstring[1])) ? explode('?', $refstring[1]) : '';
     } else {
         $referrer[0] = 'login.php';
     }
@@ -101,9 +101,12 @@ if ($ui->st('w', 'get') == 'lo') {
         redirect('admin.php');
 
     } else {
+        $target = (isset($pageurl)) ? $pageurl . '/' . $ewInstallPath : $ewInstallPath;
+        $target .= (empty($target)) ? 'login.php' : '/login.php';
+
         session_unset();
         session_destroy();
-        redirect($page_url . '/' . $ewInstallPath);
+        redirect($target);
     }
 
 } else if ($ui->st('w', 'get') == 'ba') {
@@ -284,9 +287,7 @@ if ($ui->st('w', 'get') == 'lo') {
                 $resellerid = $row['resellerID'];
 
                 $passwordCorrect = true;
-
             }
-
         }
 
         unset($_SESSION['loginSubstitutesAllowed']);
@@ -466,7 +467,6 @@ if ($ui->st('w', 'get') == 'lo') {
                 $query->execute(array($halfhour, $loguserip));
 
                 redirect('login.php?w=ca&r=lo');
-
             }
         }
 
@@ -488,11 +488,11 @@ if ($ui->st('w', 'get') == 'lo') {
 
             if ($passwordCorrect !== true and $passwordCorrect !== false) {
                 if (is_array($passwordCorrect)) {
-                    $query = $sql->prepare("UPDATE `userdata` SET `security`=?,`salt`=? WHERE `id`=? LIMIT 1");
-                    $query->execute(array($passwordCorrect['hash'], $passwordCorrect['salt'], $id));
+                    $query2 = $sql->prepare("UPDATE `userdata` SET `security`=?,`salt`=? WHERE `id`=? LIMIT 1");
+                    $query2->execute(array($passwordCorrect['hash'], $passwordCorrect['salt'], $id));
                 } else {
-                    $query = $sql->prepare("UPDATE `userdata` SET `security`=? WHERE `id`=? LIMIT 1");
-                    $query->execute(array($passwordCorrect, $id));
+                    $query2 = $sql->prepare("UPDATE `userdata` SET `security`=? WHERE `id`=? LIMIT 1");
+                    $query2->execute(array($passwordCorrect, $id));
                 }
             }
         }
@@ -595,7 +595,7 @@ if ($ui->st('w', 'get') == 'lo') {
 
             session_unset();
             session_destroy();
-            session_set_cookie_params($sessionCookieParameter['lifetime'], $sessionCookieParameter['path'], $sessionCookieParameter['domain'], true, ($ui->escaped('HTTPS', 'server') == 'on'));
+            session_set_cookie_params($sessionCookieParameter['lifetime'], $sessionCookieParameter['path'], $sessionCookieParameter['domain'], ($ui->escaped('HTTPS', 'server') == 'on'), true);
             session_start();
 
             # https://github.com/easy-wi/developer/issues/2

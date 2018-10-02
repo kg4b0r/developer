@@ -79,7 +79,7 @@ if ($ui->w('action', 4, 'post') and !token(true)) {
         $ftpPort = $row['ftpport'];
         $ftpPass = $row['cftppass'];
         $ftpUser = ($row['newlayout'] == 'Y') ? $row['cname'] . '-' . $row['id'] : $row['cname'];
-        $gsFolder = '/server/' . $row['serverip'] . '_' . $row['port'] . '/';
+        $gsFolder = '/server/';
         $gsFolder .= ($row['servertemplate'] == 1) ? $row['shorten'] : $row['shorten'] . '-' . $row['servertemplate'];
         $address = $row['serverip'] . ':' . $row['port'];
         $shorten = $row['shorten'];
@@ -100,12 +100,14 @@ if ($ui->w('action', 4, 'post') and !token(true)) {
 
     $id = $ui->id('id', 10, 'get');
 
-    $query = $sql->prepare("SELECT g.`serverip`,g.`port`,t.`liveConsole` FROM `gsswitch` AS g INNER JOIN `serverlist` AS s ON g.`serverid`=s.`id` INNER JOIN `servertypes` AS t ON s.`servertype`=t.`id` WHERE g.`id`=? AND g.`userid`=? AND g.`resellerid`=? LIMIT 1");
+    $query = $sql->prepare("SELECT g.`serverip`,g.`port`,g.`id`,g.`stopped`,t.`liveConsole` FROM `gsswitch` AS g INNER JOIN `serverlist` AS s ON g.`serverid`=s.`id` INNER JOIN `servertypes` AS t ON s.`servertype`=t.`id` WHERE g.`id`=? AND g.`userid`=? AND g.`resellerid`=? LIMIT 1");
     $query->execute(array($id, $user_id, $resellerLockupID));
     while ($row = $query->fetch(PDO::FETCH_ASSOC)) {
         $serverIp = $row['serverip'];
         $port = $row['port'];
         $liveConsole = $row['liveConsole'];
+        $id = $row['id'];
+        $stopped = $row['stopped'];
     }
 
     if ($query->rowCount() > 0) {
@@ -768,7 +770,7 @@ if ($ui->w('action', 4, 'post') and !token(true)) {
 
                 } else if ($ui->smallletters('type', 4, 'get') == 'easy' or ($ui->smallletters('type', 4, 'get') == 'full' and !isset($ui->post['update']))) {
 
-                    $ftp->downloadToTemp($pserver . $serverip . '_' . $port . '/' . $ftpshorten . '/' . $config);
+                    $ftp->downloadToTemp($pserver . '/' . $ftpshorten . '/' . $config);
                     $configfile = $ftp->getTempFileContent();
 
                 }
@@ -879,11 +881,11 @@ if ($ui->w('action', 4, 'post') and !token(true)) {
 
                     $uploaded = false;
 
-                    if ($ftp->uploadFileFromTemp($ftp->removeSlashes($pserver . $serverip . '_' . $port . '/' . $ftpshorten . '/'), $config, false)) {
+                    if ($ftp->uploadFileFromTemp($ftp->removeSlashes($pserver . '/' . $ftpshorten . '/'), $config, false)) {
                         $uploaded = true;
                     }
 
-                    if ($uploaded == false and $ftp->uploadFileFromTemp($ftp->removeSlashes($homeDir . '/' . $pserver . $serverip . '_' . $port . '/' . $ftpshorten . '/'), $config, false)) {
+                    if ($uploaded == false and $ftp->uploadFileFromTemp($ftp->removeSlashes($homeDir . '/' . $pserver . '/' . $ftpshorten . '/'), $config, false)) {
                         $uploaded = true;
                     }
 
@@ -1007,7 +1009,7 @@ if ($ui->w('action', 4, 'post') and !token(true)) {
 
             $address = $ip . ':' . $port;
             $map = (in_array($row['queryMap'], array(false, null, ''))) ? 'Unknown' : $row['queryMap'];
-            $updatetime = ($user_language == 'de') ? ($row['queryUpdatetime'] != '') ? date('d.m.Y H:m:s',strtotime($row['queryUpdatetime'])) : $sprache->never : $row['queryUpdatetime'];
+            $updatetime = ($user_language == 'de') ? (($row['queryUpdatetime'] != '') ? date('d.m.Y H:i:s', strtotime($row['queryUpdatetime'])) : $sprache->never) : $row['queryUpdatetime'];
             $upload = ($row['upload'] > 1 and $row['upload'] < 4) ? true : false;
             $currentTemplate = (($protected == 'N' or $tprotected == 'N') and $servertemplate > 1) ? $row['shorten'] . '-' . $servertemplate : $row['shorten'];
             $ce = explode(',', $row['cores']);
@@ -1049,7 +1051,7 @@ if ($ui->w('action', 4, 'post') and !token(true)) {
 
                 $query2->execute(array($rootid));
                 $ftpport = $query2->fetchColumn();
-                $ftpdata = 'ftp://' . $cname . ':' . $cftppass . '@' . $ip . ':' . $ftpport . $pserver . $ip . '_' . $port. '/' . $currentTemplate;
+                $ftpdata = 'ftp://' . $cname . ':' . $cftppass . '@' . $ip . ':' . $ftpport . $pserver . $currentTemplate;
             } else {
                 $cftppass = '';
                 $ftpport = '';

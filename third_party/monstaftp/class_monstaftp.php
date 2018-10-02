@@ -138,7 +138,7 @@ class Monsta {
 ###############################################
     private function connectFTP() {
 
-        $this->ftpConnection = @ftp_connect($this->ftpIP, $this->ftpPort, 3);
+        $this->ftpConnection = @ftp_connect($this->ftpIP, $this->ftpPort, 15);
 
         if ($this->ftpConnection) {
 
@@ -511,9 +511,14 @@ class Monsta {
             $year="";
 
             // Split up array into values
-            $ff = preg_split("/[\s]+/",$ff,9);
+            $ff = preg_split("/[\s]+/", $ff, 9);
 
             $perms = $ff[0];
+
+            if (!isset($ff[2])) {
+                continue;
+            }
+
             $user = $ff[2];
             $group = $ff[3];
             $size = $ff[4];
@@ -522,9 +527,11 @@ class Monsta {
             $file = $ff[8];
 
             // Check if file starts with a dot
-            $dot_prefix=0;
-            if (preg_match("/^\.+/",$file) && $_SESSION["monstaftp"][$this->serverID]["interface"] == "bas")
-                $dot_prefix=1;
+            $dot_prefix = 0;
+
+            if (preg_match("/^\.+/",$file) && $_SESSION["monstaftp"][$this->serverID]["interface"] == "bas") {
+                $dot_prefix = 1;
+            }
 
             if ($file != "." && $file != ".." && $dot_prefix == 0) {
 
@@ -3014,7 +3021,7 @@ class Monsta {
             }
 
             // Check if file reached server
-            if (file_put_contents($fp1,file_get_contents('php://input'))) {
+            if (file_put_contents($fp1, file_get_contents('php://input')) or (int) $ui->escaped('HTTP_X_FILE_SIZE','server') == 0) {
 
                 if (!@ftp_put($this->ftpConnection, $fp2, $fp1, FTP_BINARY)) {
                     if ($this->checkFirstCharTilde($fp2) == 1) {

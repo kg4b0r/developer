@@ -11,7 +11,7 @@
     <meta name="description" content="">
     <meta name="author" content="2012 - <?php echo date('Y'); ?> <?php if(isset($ewCfg['title'])) echo $ewCfg['title']; ?>">
 
-    <link rel="shortcut icon" type="image/x-icon" href="<?php echo (isset($rSA['favicon'])) ? $rSA['favicon'] : 'images/favicon.ico';?>" />
+    <link rel="shortcut icon" type="image/x-icon" href="<?php echo (isset($rSA['favicon']) and !empty($rSA['favicon'])) ? $rSA['favicon'] : 'images/favicon.ico';?>" />
 
     <!-- Bootstrap CSS -->
     <link href="css/default/bootstrap.min.css" rel="stylesheet">
@@ -102,42 +102,44 @@
                     <?php } ?>
 
                     <li class="dropdown user user-menu">
-                         <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                             <img src="images/Places-user-identity-icon.png" class="user-image" alt="User Image">
-                             <span><?php echo $great_user;?> <i class="caret"></i></span>
-                         </a>
-                          <ul class="dropdown-menu">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                            <img src="images/Places-user-identity-icon.png" class="user-image" alt="User Image">
+                            <span class="hidden-xs"><?php echo $great_user;?> <i class="caret"></i></span>
+                        </a>
+
+                        <ul class="dropdown-menu">
                             <!-- User image -->
-                              <li class="user-header">
-                             <img src="images/Places-user-identity-icon.png" class="img-circle" alt="User Image">
-                             <p>
-                               <?php echo $great_user;?> <br/>
-                               <small></small>
-                             </p>
-                              </li>
+                            <li class="user-header hidden-xs">
+                                <img src="images/Places-user-identity-icon.png" class="img-circle" alt="User Image">
+                                <p>
+                                    <?php echo $great_user;?> <br/>
+                                </p>
+                            </li>
+
                             <!-- Main Area -->
-                            <li><a href="#"><?php echo $gsprache->last.'<br />'.$great_last;?></a></li>
-                            <li class="divider"></li>
+                            <!-- Menu Body -->
+                            <li class="hidden-xs"><a href="#"><?php echo $gsprache->last.'<br />'.$great_last;?></a></li>
+                            <li class="divider hidden-xs"></li>
                             <?php if ($support_phonenumber!="") echo '<li><a href="#"><i class="fa fa-phone fa-fw"></i> '.$gsprache->hotline.": ".$support_phonenumber.'</a></li><li class="divider"></li>';?>
                             <li><a href="admin.php?w=su&amp;d=pw"><i class="fa fa-key fa-fw"></i> <?php echo $gsprache->password." ".$gsprache->change;?></a></li>
                             <li><a href="admin.php?w=su"><i class="fa fa-cog fa-fw"></i> <?php echo $gsprache->settings;?></a></li>
-                            
-                            <li class="divider"></li>
+                            <li class="divider  hidden-xs"></li>
                             <li><a href="https://easy-wi.com" target="_blank"><i class="fa fa-info-circle fa-fw"></i> About</a></li>
                             <li><a href="https://easy-wi.com/forum/" target="_blank"><i class="fa fa-comments fa-fw"></i> Forum</a></li>
                             <li><a href="https://easy-wi.com/de/handbuch/" target="_blank"><i class="fa fa-question-circle fa-fw"></i> Wiki</a></li>
+                            <li><a href="https://gitter.im/easy-wi/Lobby?utm_source=share-link&utm_medium=link&utm_campaign=share-link" target="_blank"><i class="fa fa-github fa-fw"></i> Easy-WI @ Gitter</a></li>
+                            <li><a href="https://github.com/easy-wi/developer" target="_blank"><i class="fa fa-github fa-fw"></i> Easy-WI @ Github</a></li>
                             <li><a href="https://www.facebook.com/easywi" target="_blank"><i class="fa fa-facebook-square fa-fw"></i> Easy-WI @ Facebook</a></li>
                             <li><a href="https://twitter.com/EasyWI" target="_blank"><i class="fa fa-twitter fa-fw"></i> Easy-WI @ Twitter</a></li>
-                            <li><a href="https://github.com/easy-wi/developer" target="_blank"><i class="fa fa-github fa-fw"></i> Easy-WI @ Github</a></li>
-                            <li><a href="https://github.com/ValveSoftware/steam-for-linux/issues" target="_blank"><i class="fa fa-bug fa-fw"></i> Steam Bugtracker</a></li>
+
                             <!-- Menu Footer-->
                             <li class="user-footer">
-                            <div class="pull-left">
-                            <a href="admin.php?w=su" class="btn btn-default btn-flat">Profile</a>
-                            </div>
-                            <div class="pull-right">
-                            <a href="login.php?w=lo" class="btn btn-default btn-danger" style="color:white;"><i class="fa fa-power-off"></i> Logout</a>
-                            </div>
+                                <div class="pull-left">
+                                    <a href="admin.php?w=su" class="btn btn-default btn-flat">Profile</a>
+                                </div>
+                                <div class="pull-right">
+                                    <a href="login.php?w=lo" class="btn btn-default btn-danger" style="color:white;"><i class="fa fa-power-off"></i> Logout</a>
+                                </div>
                             </li>
                         </ul>
                     </li>
@@ -155,31 +157,16 @@
         <aside class="main-sidebar sidebar-offcanvas">
             <!-- sidebar: style can be found in sidebar.less -->
             <section class="sidebar">
-                <!-- search form -->
-                <form action="admin.php" method="get" class="sidebar-form">
-                    <input type="hidden" name="w" value="sr">
-                    <?php if($pa['gserver']){ ?><input type="hidden" name="type[]" value="gs"><?php }?>
-                    <?php if($pa['gimages']){ ?><input type="hidden" name="type[]" value="im"><?php }?>
-                    <?php if($pa['addons']){ ?><input type="hidden" name="type[]" value="ad"><?php }?>
-                    <?php if($pa['voiceserver']){ ?><input type="hidden" name="type[]" value="vo"><?php }?>
-                    <?php if($pa['addvserver'] or $pa['modvserver'] or $pa['delvserver'] or $pa['usevserver']){ ?><input type="hidden" name="type[]" value="vs"><?php }?>
-                    <?php if($pa['roots']){ ?><input type="hidden" name="type[]" value="ro"><?php }?>
-                    <?php if($pa['user'] or $pa['user_users']){ ?><input type="hidden" name="type[]" value="us"><?php }?>
-                    <div class="input-group">
-                        <input type="text" name="q" class="form-control" placeholder="Search...">
-                        <span class="input-group-btn">
-                            <button type='submit' id='search-btn' class="btn btn-flat"><i class="fa fa-search"></i></button>
-                        </span>
-                    </div>
-                </form>
 
-                <ul class="sidebar-menu">
+                <ul class="sidebar-menu" data-widget="tree">
 
                     <li class="treeview <?php if(in_array($w,array('da','ho','ib','ip','lo','ml','sc')) or isset($customModules['ip'][$ui->smallletters('w',255,'get')])) echo 'active';?>">
                         <a href="#">
                             <i class="fa fa-home fa-fw"></i>
                             <span>Home</span>
-                            <i class="fa fa-angle-left pull-right"></i>
+                            <span class="pull-right-container">
+                              <i class="fa fa-angle-left pull-right"></i>
+                            </span>
                         </a>
                         <ul class="treeview-menu">
                             <li <?php if($w=='da' or $w=='ho') echo 'class="active"';?>><a href="admin.php?w=da"><i class="fa fa-dashboard"></i> Dashboard</a></li>
@@ -198,7 +185,9 @@
                         <a href="#">
                             <i class="fa fa-wrench"></i>
                             <span><?php echo $gsprache->settings;?></span>
-                            <i class="fa fa-angle-left pull-right"></i>
+                            <span class="pull-right-container">
+                              <i class="fa fa-angle-left pull-right"></i>
+                            </span>
                         </a>
                         <ul class="treeview-menu">
                             <li <?php if($ui->smallletters('w',255,'get')=='se') echo 'class="active"';?>><a href="admin.php?w=se"><i class="fa fa-wrench"></i> <?php echo $gsprache->settings;?></a></li>
@@ -221,7 +210,9 @@
                         <a href="#">
                             <i class="fa fa-cloud fa-fw"></i>
                             <span><?php echo $gsprache->jobs.'/'.$gsprache->api;?></span>
-                            <i class="fa fa-angle-left pull-right"></i>
+                            <span class="pull-right-container">
+                              <i class="fa fa-angle-left pull-right"></i>
+                            </span>
                         </a>
                         <ul class="treeview-menu">
                         <?php if($pa['jobs']) { ?><li <?php if($ui->smallletters('w',255,'get')=='jb') echo 'class="active"';?>><a href="admin.php?w=jb"><i class="fa fa-tasks"></i> <?php echo $gsprache->jobs.' '.$gsprache->overview;?></a></li><?php } ?>
@@ -239,7 +230,9 @@
                         <a href="#">
                             <i class="fa fa-rss fa-fw"></i>
                             <span><?php echo $gsprache->feeds;?></span>
-                            <i class="fa fa-angle-left pull-right"></i>
+                            <span class="pull-right-container">
+                              <i class="fa fa-angle-left pull-right"></i>
+                            </span>
                         </a>
                         <ul class="treeview-menu">
                             <li <?php if($ui->smallletters('w',255,'get')=='fn') echo 'class="active"';?>><a href="admin.php?w=fn"><i class="fa fa-rss"></i> <?php echo $gsprache->news;?></a></li>
@@ -254,7 +247,9 @@
                         <a href="#">
                             <i class="fa fa-globe fa-fw"></i>
                             <span>CMS</span>
-                            <i class="fa fa-angle-left pull-right"></i>
+                            <span class="pull-right-container">
+                              <i class="fa fa-angle-left pull-right"></i>
+                            </span>
                         </a>
                         <ul class="treeview-menu">
                             <?php if($pa['cms_news']) { ?>
@@ -278,7 +273,9 @@
                         <a href="#">
                             <i class="fa fa-cubes fa-fw"></i>
                             <span><?php echo $gsprache->webspace;?></span>
-                            <i class="fa fa-angle-left pull-right"></i>
+                            <span class="pull-right-container">
+                              <i class="fa fa-angle-left pull-right"></i>
+                            </span>
                         </a>
                         <ul class="treeview-menu">
                             <li <?php if($ui->smallletters('w',255,'get')=='wv') echo 'class="active"';?>><a href="admin.php?w=wv"><i class="fa fa-columns"></i> Vhosts <?php echo $gsprache->overview;?></a></li>
@@ -293,7 +290,9 @@
                         <a href="#">
                             <i class="fa fa-database fa-fw"></i>
                             <span>MySQL</span>
-                            <i class="fa fa-angle-left pull-right"></i>
+                            <span class="pull-right-container">
+                              <i class="fa fa-angle-left pull-right"></i>
+                            </span>
                         </a>
                         <ul class="treeview-menu">
                             <?php if($pa['mysql']) { ?>
@@ -312,7 +311,9 @@
                         <a href="#">
                             <i class="fa fa-users fa-fw"></i>
                             <span><?php echo $gsprache->user;?></span>
-                            <i class="fa fa-angle-left pull-right"></i>
+                            <span class="pull-right-container">
+                              <i class="fa fa-angle-left pull-right"></i>
+                            </span>
                         </a>
                         <ul class="treeview-menu">
                             <?php if($pa['user'] or $pa['user_users']) { ?>
@@ -334,7 +335,9 @@
                         <a href="#">
                             <i class="fa fa-gamepad fa-fw"></i>
                             <span><?php echo $gsprache->gameserver;?></span>
-                            <i class="fa fa-angle-left pull-right"></i>
+                            <span class="pull-right-container">
+                              <i class="fa fa-angle-left pull-right"></i>
+                            </span>
                         </a>
                         <ul class="treeview-menu">
                             <?php if($pa['gserver']) { ?>
@@ -362,7 +365,9 @@
                         <a href="#">
                             <i class="fa fa-hdd-o fa-fw"></i>
                             <span><?php echo $gsprache->appRoot;?></span>
-                            <i class="fa fa-angle-left pull-right"></i>
+                            <span class="pull-right-container">
+                              <i class="fa fa-angle-left pull-right"></i>
+                            </span>
                         </a>
                         <ul class="treeview-menu">
                             <?php if($pa['roots']) { ?>
@@ -381,7 +386,9 @@
                         <a href="#">
                             <i class="fa fa-microphone fa-fw"></i>
                             <span><?php echo $gsprache->voiceserver;?></span>
-                            <i class="fa fa-angle-left pull-right"></i>
+                            <span class="pull-right-container">
+                              <i class="fa fa-angle-left pull-right"></i>
+                            </span>
                         </a>
                         <ul class="treeview-menu">
                             <?php if($pa['voiceserver']) { ?>
@@ -409,7 +416,9 @@
                         <a href="#">
                             <i class="fa fa-flask fa-fw"></i>
                             <span><?php echo $gsprache->lendserver;?></span>
-                            <i class="fa fa-angle-left pull-right"></i>
+                            <span class="pull-right-container">
+                              <i class="fa fa-angle-left pull-right"></i>
+                            </span>
                         </a>
                         <ul class="treeview-menu">
                             <?php if($pa['lendserver']) { ?>
@@ -427,7 +436,9 @@
                         <a href="#">
                             <i class="fa fa-life-ring fa-fw"></i>
                             <span><?php echo $gsprache->reseller.' '.$gsprache->support;?></span>
-                            <i class="fa fa-angle-left pull-right"></i>
+                            <span class="pull-right-container">
+                              <i class="fa fa-angle-left pull-right"></i>
+                            </span>
                         </a>
                         <ul class="treeview-menu">
                             <li <?php if($ui->smallletters('w',255,'get')=='tr' and $ui->smallletters('d',255,'get')!='ad') echo 'class="active"';?>><a href="admin.php?w=tr"><i class="fa fa-columns"></i> <?php echo $gsprache->overview;?></a></li>
@@ -441,7 +452,9 @@
                         <a href="#">
                             <i class="fa fa-life-ring fa-fw"></i>
                             <span><?php echo $gsprache->support;?></span>
-                            <i class="fa fa-angle-left pull-right"></i>
+                            <span class="pull-right-container">
+                              <i class="fa fa-angle-left pull-right"></i>
+                            </span>
                         </a>
                         <ul class="treeview-menu">
                             <li <?php if($ui->smallletters('w',255,'get')=='ti' and !in_array($d,array('at','mt','dt'))) echo 'class="active"';?>><a href="admin.php?w=ti"><i class="fa fa-columns"></i> <?php echo $gsprache->overview;?></a></li>
@@ -456,7 +469,9 @@
                         <a href="#">
                             <i class="fa fa-laptop fa-fw"></i>
                             <span>Rootserver</span>
-                            <i class="fa fa-angle-left pull-right"></i>
+                            <span class="pull-right-container">
+                              <i class="fa fa-angle-left pull-right"></i>
+                            </span>
                         </a>
                         <ul class="treeview-menu">
                             <?php if($pa['modvserver'] or $pa['delvserver'] or $pa['usevserver']) { ?><li <?php if($ui->smallletters('w',255,'get')=='vs') echo 'class="active"';?>><a href="admin.php?w=vs&amp;d=md"><i class="fa fa-cloud"></i> <?php echo $gsprache->virtual;?></a></li><?php } ?>
@@ -473,7 +488,9 @@
                         <a href="#">
                             <i class="fa fa-sitemap fa-fw"></i>
                             <span><?php echo $gsprache->network;?></span>
-                            <i class="fa fa-angle-left pull-right"></i>
+                            <span class="pull-right-container">
+                              <i class="fa fa-angle-left pull-right"></i>
+                            </span>
                         </a>
                         <ul class="treeview-menu">
                             <?php if($pa['traffic']) { ?><li <?php if($ui->smallletters('w',255,'get')=='tf' and $d!='se') echo 'class="active"';?>><a href="admin.php?w=tf"><i class="fa fa-area-chart"></i> <?php echo $gsprache->traffic;?></a></li><?php } ?>
@@ -490,7 +507,9 @@
                         <a href="#">
                             <i class="fa fa-tasks fa-fw"></i>
                             <span><?php echo $gsprache->modules;?></span>
-                            <i class="fa fa-angle-left pull-right"></i>
+                            <span class="pull-right-container">
+                              <i class="fa fa-angle-left pull-right"></i>
+                            </span>
                         </a>
                         <ul class="treeview-menu">
                             <?php foreach ($customModules['mo'] as $k => $v) { echo '<li '; echo ($ui->smallletters('w',255,'get')==$k) ? 'class="active"' : ''; echo '><a href="admin.php?w='.$k.'">'.$v.'</a></li>'; }; ?>

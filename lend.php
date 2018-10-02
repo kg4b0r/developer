@@ -38,6 +38,7 @@
 
 
 if (isset($page_include)) {
+
     $reseller_id = 0;
 
 } else {
@@ -123,7 +124,7 @@ $slotselect = array();
 $votimeselect = array();
 $voslotselect = array();
 
-$query = $sql->prepare("SELECT `active` FROM `modules` WHERE `id`=5 LIMIT 1");
+$query = $sql->prepare("SELECT `active` FROM `modules` WHERE `sub`='le' LIMIT 1");
 $query->execute();
 $active = $query->fetchColumn();
 $active = (active_check($active)) ? $active : 'Y';
@@ -277,9 +278,9 @@ $query = $sql->prepare("SELECT COUNT(`id`) AS `amount` FROM `gsswitch` WHERE `le
 $query->execute(array($reseller_id));
 $gscount = $query->fetchColumn();
 
-if ($activeGS == 'Y' and ($w == 'gs' or $d == 'gs' or $ui->st('w', 'post') == 'gs' or (isset($page_name) and $page_name == strtolower(str_replace(' ', '-', $gsprache->gameserver))))) {
+if ($activeGS == 'Y' and ($ui->st('d', 'get') == 'gs' or $ui->st('w', 'post') == 'gs' or (isset($page_name) and $page_name == strtolower(str_replace(' ', '-', $gsprache->gameserver))))) {
     $servertype = 'g';
-} else if ($activeVS == 'Y' and ($w == 'vo' or $d == 'vo' or $ui->st('w', 'post') == 'vo' or (isset($page_name) and $page_name == strtolower(str_replace(' ', '-', $gsprache->voiceserver))))) {
+} else if ($activeVS == 'Y' and ($ui->st('d', 'get') == 'vo' or $ui->st('w', 'post') == 'vo' or (isset($page_name) and $page_name == strtolower(str_replace(' ', '-', $gsprache->voiceserver))))) {
     $servertype = 'v';
 }
 

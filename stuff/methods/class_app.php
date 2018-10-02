@@ -47,6 +47,12 @@ if (!class_exists('EasyWiFTP')) {
     include(EASYWIDIR . '/stuff/methods/class_ftp.php');
 }
 
+if (!class_exists('Yaml')) {
+    include(EASYWIDIR . '/third_party/Symfony/autoloader_yaml.php');
+}
+
+use Symfony\Component\Yaml\Yaml;
+
 class AppServer {
 
     private $uniqueHex, $winCmds = array(), $shellScriptHeader, $shellScripts = array('user' => '', 'server' => array()), $commandReturns = array(), $undefinedRequiredVars = array();
@@ -181,12 +187,13 @@ class AppServer {
 
             $serverTemplateDir = $this->appServerDetails['homeDir'] . '/' . $this->appServerDetails['userName'];
             $serverTemplateDir .= ($this->appServerDetails['protectionModeStarted'] == 'Y') ? '/pserver/' : '/server/';
-            $this->appServerDetails['absolutePath'] = $this->removeSlashes($serverTemplateDir . $this->appServerDetails['serverIP'] . '_' . $this->appServerDetails['port'] . '/' . $this->appServerDetails['app']['templateChoosen'] . '/');
+            $this->appServerDetails['absolutePath'] = $this->removeSlashes($serverTemplateDir . '/' . $this->appServerDetails['app']['templateChoosen'] . '/');
+            $this->appServerDetails['absoluteTemplatePath'] = $this->removeSlashes($serverTemplateDir);
 
             // For protected users the pserver/ directory is the home folder
             // We deliberately let admins that failed to setup a chrooted FTP environment run into errors
             $absoluteFTPPath = ($this->appServerDetails['protectionModeStarted'] == 'Y') ? '/' : '/server/';
-            $absoluteFTPPath .= $this->appServerDetails['serverIP'] . '_' . $this->appServerDetails['port'] . '/' . $this->appServerDetails['app']['templateChoosen'];
+            $absoluteFTPPath .= $this->appServerDetails['app']['templateChoosen'];
 
             if ($this->getGameType() == 'hl2') {
                 $absoluteFTPPath .= '/' . $this->appServerDetails['template']['binarydir'];
@@ -433,12 +440,20 @@ class AppServer {
         $this->shellScripts['user'] .=  'if [ "$USER" != "" -a $USER -eq $USER 2> /dev/null ]; then CONFIGUSERID=$USER; fi' . "\n";
         $this->shellScripts['user'] .=  'USERID=`getent passwd | cut -f3 -d: | sort -un | awk \'BEGIN { id=\'${CONFIGUSERID}\' } $1 == id { id++ } $1 > id { print id; exit }\'`' . "\n";
         $this->shellScripts['user'] .=  'if [ "`ls -la /var/run/screen | awk \'{print $3}\' | grep $USERID`" == "" -a "`grep \"x:$USERID:\" /etc/passwd`" == "" ]; then' . "\n";
-        $this->shellScripts['user'] .=  'sudo /usr/sbin/useradd -m -p `perl -e \'print crypt("\'' . $password . '\'","Sa")\'` -d ' . $this->removeSlashes($this->appServerDetails['homeDir'] . '/' . $userNameHome) . ' -g ' . $this->appMasterServerDetails['ssh2User'] . ' -s /bin/bash -u $USERID ' . $userName . ' 2>/dev/null' . "\n";
+        $this->shellScripts['user'] .=  'if [ "`lsb_release -i 2> /dev/null | grep \'Distributor\' | awk \'{print tolower($3)}\'`" == "centos" ]; then' . "\n";
+        $this->shellScripts['user'] .=  'sudo /usr/sbin/useradd -m -p `perl -e \'print crypt("\'' . $password . '\'","Sa")\'` -d ' . $this->removeSlashes($this->appServerDetails['homeDir'] . '/' . $userNameHome) . ' -g ' . $this->appMasterServerDetails['ssh2User'] . ' -s /bin/false $USERID ' . $userName . ' 2>/dev/null' . "\n";
+        $this->shellScripts['user'] .=  'else' . "\n";
+        $this->shellScripts['user'] .=  'sudo /usr/sbin/useradd -m -p `perl -e \'print crypt("\'' . $password . '\'","Sa")\'` -d ' . $this->removeSlashes($this->appServerDetails['homeDir'] . '/' . $userNameHome) . ' -g ' . $this->appMasterServerDetails['ssh2User'] . ' -s /bin/false -u $USERID ' . $userName . ' 2>/dev/null' . "\n";
+        $this->shellScripts['user'] .=  'fi' . "\n";
         $this->shellScripts['user'] .=  'else' . "\n";
         $this->shellScripts['user'] .=  'while [ "`ls -la /var/run/screen | awk \'{print $3}\' | grep $USERID`" != "" -o "`grep \"x:$USERID:\" /etc/passwd`" != "" ]; do' . "\n";
         $this->shellScripts['user'] .=  'USERID=$[USERID+1]' . "\n";
         $this->shellScripts['user'] .=  'if [ "`ls -la /var/run/screen | awk \'{print $3}\' | grep $USERID`" == "" -a "`grep \"x:$USERID:\" /etc/passwd`" == "" ]; then' . "\n";
-        $this->shellScripts['user'] .=  'sudo /usr/sbin/useradd -m -p `perl -e \'print crypt("\'' . $password . '\'","Sa")\'` -m -d ' . $this->removeSlashes($this->appServerDetails['homeDir'] . '/' . $userNameHome) . ' -g ' . $this->appMasterServerDetails['ssh2User'] . ' -s /bin/bash -u $USERID ' . $userName . ' 2>/dev/null' . "\n";
+        $this->shellScripts['user'] .=  'if [ "`lsb_release -i 2> /dev/null | grep \'Distributor\' | awk \'{print tolower($3)}\'`" == "centos" ]; then' . "\n";
+        $this->shellScripts['user'] .=  'sudo /usr/sbin/useradd -m -p `perl -e \'print crypt("\'' . $password . '\'","Sa")\'` -m -d ' . $this->removeSlashes($this->appServerDetails['homeDir'] . '/' . $userNameHome) . ' -g ' . $this->appMasterServerDetails['ssh2User'] . ' -s /bin/false $USERID ' . $userName . ' 2>/dev/null' . "\n";
+        $this->shellScripts['user'] .=  'else' . "\n";
+        $this->shellScripts['user'] .=  'sudo /usr/sbin/useradd -m -p `perl -e \'print crypt("\'' . $password . '\'","Sa")\'` -m -d ' . $this->removeSlashes($this->appServerDetails['homeDir'] . '/' . $userNameHome) . ' -g ' . $this->appMasterServerDetails['ssh2User'] . ' -s /bin/false -u $USERID ' . $userName . ' 2>/dev/null' . "\n";
+        $this->shellScripts['user'] .=  'fi' . "\n";
         $this->shellScripts['user'] .=  'fi' . "\n";
         $this->shellScripts['user'] .=  'done' . "\n";
         $this->shellScripts['user'] .=  'fi' . "\n";
@@ -547,30 +562,6 @@ class AppServer {
         $this->shellScripts['server']["{$scriptName}"] = $script;
     }
 
-    // Usecase: IP or port was changed for a server. Now the files need to be moved locally
-    private function linuxMoveServerLocal ($oldIP, $oldPort) {
-
-        $scriptName = $this->removeSlashes('/home/' . $this->appMasterServerDetails['ssh2User'] . '/temp/move-' . $this->appServerDetails['userName'] . '-' . $this->appServerDetails['serverIP'] . '-' . $this->appServerDetails['port'] . '-' . $oldIP . '-' . $oldPort . '.sh');
-        $script = $this->shellScriptHeader;
-        $script .= 'rm -f ' . $scriptName . "\n";
-        $script .= 'cd ' . $this->removeSlashes($this->appServerDetails['homeDir'] . '/' . $this->appServerDetails['userName'] . '/server') . "\n";
-        $script .= 'if [ -d "' . $this->appServerDetails['serverIP'] . '_' . $this->appServerDetails['port']. '" ]; then rm -rf "' . $this->appServerDetails['serverIP'] . '_' . $this->appServerDetails['port'] . '"; fi' . "\n";
-        $script .= 'mv ' . $oldIP . '_' . $oldPort . ' ' . $this->appServerDetails['serverIP'] . '_' . $this->appServerDetails['port'] . "\n";
-
-        $this->addLinuxScript($scriptName, $script);
-
-        $this->addLogline('app_server.log', 'moved app from ' . $oldIP . '_' . $oldPort . ' to ' . $this->appServerDetails['serverIP'] . '_' . $this->appServerDetails['port']);
-    }
-
-    public function moveServerLocal ($oldIP, $oldPort) {
-
-        if ($this->appServerDetails and $this->appMasterServerDetails['os'] == 'L') {
-            $this->linuxMoveServerLocal($oldIP, $oldPort);
-        } else if ($this->appServerDetails and $this->appMasterServerDetails['os'] == 'W') {
-
-        }
-    }
-
     private function copyStartFile($sourcePath, $targetPath) {
 
         $targetPath = $this->removeSlashes($targetPath . $this->appServerDetails['template']['binarydir']);
@@ -598,9 +589,9 @@ class AppServer {
         }
 
         $serverDir = ($this->appServerDetails['protectionModeStarted'] == 'Y') ? 'pserver/' : 'server/';
-        $absolutePath = $this->removeSlashes($this->appServerDetails['homeDir'] . '/' . $this->appServerDetails['userName'] . '/' . $serverDir . $this->appServerDetails['serverIP'] . '_' . $this->appServerDetails['port']);
+        $absolutePath = $this->removeSlashes($this->appServerDetails['homeDir'] . '/' . $this->appServerDetails['userName'] . '/' . $serverDir);
 
-        $copyFileExtensions = array('xml', 'vdf', 'cfg', 'con', 'conf', 'config', 'ini', 'gam', 'txt', 'log', 'smx', 'sp', 'db', 'lang', 'lua', 'props', 'properties', 'json', 'example', 'html', 'yml');
+        $copyFileExtensions = array('xml', 'vdf', 'cfg', 'con', 'conf', 'config', 'ini', 'gam', 'txt', 'log', 'smx', 'sp', 'db', 'lang', 'lua', 'props', 'properties', 'json', 'example', 'html', 'yml', 'yaml', 'csv');
 
         if ($standalone and isset($scriptName)) {
             $script = $this->shellScriptHeader;
@@ -611,9 +602,15 @@ class AppServer {
 
         $script .= "PATTERN='(/valve|/overviews/|/scripts/|/media/|/particles/|/sound/|/hl2/|/overviews/|/resource/|/sprites/|gameinfo.txt|steam.inf|steam_appid.txt)'" . "\n";
 
+        // Migrate old folder structure with ip_port as sub folder to structure without
+        $script .= 'if [ -d ' . $absolutePath . $this->appServerDetails['serverIP'] . '_' . $this->appServerDetails['port'] . ' ]; then' . "\n";
+        $script .= 'mv ' . $absolutePath . $this->appServerDetails['serverIP'] . '_' . $this->appServerDetails['port'] . '/* ' . $absolutePath . "\n";
+        $script .= '${IONICE}nice -n +19 rm -rf ' . $absolutePath . $this->appServerDetails['serverIP'] . '_' . $this->appServerDetails['port'] . "\n";
+        $script .= 'fi' . "\n";
+
         foreach ($templates as $template) {
 
-            $absoluteTargetTemplatePath = $this->removeSlashes($absolutePath . '/' . $template . '/');
+            $absoluteTargetTemplatePath = $this->removeSlashes($absolutePath . $template . '/');
             $sourceTemplate = (substr($template, -2) == '-2' or substr($template, -2) == '-3') ? substr($template, 0, (strlen($template) -2)) : $template;
             $absoluteSourceTemplatePath = $this->removeSlashes('/home/' . $this->appMasterServerDetails['ssh2User'] . '/masterserver/' . $sourceTemplate . '/');
 
@@ -631,7 +628,7 @@ class AppServer {
             $script .= 'if [ -f "' . $absoluteTargetTemplatePath . '$FILTEREDFILES" ]; then find "' . $absoluteTargetTemplatePath . '$FILTEREDFILES" -maxdepth 1 -type l -delete; fi' . "\n";
             $script .= 'if [ ! -f "' . $absoluteTargetTemplatePath . '$FILTEREDFILES" ]; then ${IONICE}cp "' . $absoluteSourceTemplatePath . '$FILTEREDFILES" "' . $absoluteTargetTemplatePath . '$FILTEREDFILES"; fi' . "\n";
             $script .= 'done' . "\n";
-            $script .= 'cp -sr ' . $absoluteSourceTemplatePath . '* ' . $absoluteTargetTemplatePath . ' > /dev/null 2>&1 ' . "\n";
+            $script .= 'cp -sr ' . $absoluteSourceTemplatePath . '* ' . $absoluteTargetTemplatePath . ' > /dev/null 2>&1' . "\n";
 
             $this->addLogline('app_server.log', 'Server template ' . $absoluteTargetTemplatePath . ' owned by user ' . $this->appServerDetails['userNameExecute'] . ' added/synced');
         }
@@ -643,15 +640,15 @@ class AppServer {
             $dirChmod = 750;
             $fileChmod = 640;
         }
-        $script .= '${IONICE}nice -n +19 find ' . $absolutePath . '/ -type d -print0 | xargs -0 chmod ' . $dirChmod . "\n";
+        $script .= '${IONICE}nice -n +19 find ' . $absolutePath . ' -type d -print0 | xargs -0 chmod ' . $dirChmod . "\n";
 
         if ($this->appServerDetails['template']['copyStartBinary'] == 'Y' and strlen($this->appServerDetails['template']['gameBinary']) > 0) {
-            $script .= '${IONICE}nice -n +19 find ' . $absolutePath . '/ -type f ! -name "' . $this->appServerDetails['template']['gameBinary'] . '" -print0 | xargs -0 chmod ' . $fileChmod . "\n";
+            $script .= '${IONICE}nice -n +19 find ' . $absolutePath . ' -type f ! -name "' . $this->appServerDetails['template']['gameBinary'] . '" -print0 | xargs -0 chmod ' . $fileChmod . "\n";
         } else {
-            $script .= '${IONICE}nice -n +19 find ' . $absolutePath . '/ -type f -print0 | xargs -0 chmod ' . $fileChmod . "\n";
+            $script .= '${IONICE}nice -n +19 find ' . $absolutePath . ' -type f -print0 | xargs -0 chmod ' . $fileChmod . "\n";
         }
 
-        $script .= '${IONICE}nice -n +19 find -L ' . $absolutePath . '/ -type l -delete' . "\n";
+        $script .= '${IONICE}nice -n +19 find -L ' . $absolutePath . ' -type l -delete' . "\n";
 
         if ($standalone and isset($scriptName)) {
             $this->addLinuxScript($scriptName, $script);
@@ -713,24 +710,62 @@ class AppServer {
         }
     }
 
-    private function linuxRemoveApp($templates) {
+    private function backUpSpareFiles($template, $spareFiles) {
+
+        if (count($spareFiles) == 0) {
+            return '';
+        }
+
+        $script = 'cd ' . $template . "\n";
+
+        foreach ($spareFiles as $spareFile) {
+
+            $script .= 'TARGET_FOLDER="`dirname ' . $spareFile . '`"' . "\n";
+
+            $script .= 'if [ ! -d "../sparefiles/${TARGET_FOLDER}" ]; then mkdir -p "../sparefiles/${TARGET_FOLDER}"' . "\n";
+
+            $script .= 'cp "' . $spareFile . '" "../sparefiles/' . $spareFile . '"' . "\n";
+        }
+
+        $script .= 'cd ..' . "\n";
+
+        return $script;
+    }
+
+    private function restoreSpareFiles($template) {
+
+        $script = 'if [ -d "sparefiles" ]; then' . "\n";
+        $script .= 'if [ !-d "' . $template . '" ]; then mkdir -p  "' . $template . '"' . "\n";
+        $script .= 'mv "sparefiles/*" "' . $template . '/"' . "\n";
+        $script .= 'rm -rf "sparefiles"' . "\n";
+        $script .= 'fi' . "\n";
+
+        return $script;
+    }
+
+    private function linuxRemoveApp($templates, $spareFiles) {
 
         $scriptName = $this->removeSlashes('/home/' . $this->appMasterServerDetails['ssh2User'] . '/temp/del-' . $this->appServerDetails['userNameExecute'] . '-' . $this->appServerDetails['serverIP'] . '-' . $this->appServerDetails['port'] . '-templates.sh');
         $serverDir = ($this->appServerDetails['protectionModeStarted'] == 'Y') ? 'pserver/' : 'server/';
 
         $script = $this->shellScriptHeader;
         $script .= 'rm -f ' . $scriptName . "\n";
-        $script .= 'cd ' . $this->removeSlashes($this->appServerDetails['homeDir'] . '/' . $this->appServerDetails['userName'] . '/' . $serverDir . $this->appServerDetails['serverIP'] . '_' . $this->appServerDetails['port'] . '/') . "\n";
+        $script .= 'cd ' . $this->removeSlashes($this->appServerDetails['homeDir'] . '/' . $this->appServerDetails['userName'] . '/' . $serverDir) . "\n";
 
         foreach ($templates as $template) {
+
+            $script .= $this->backUpSpareFiles($template, $spareFiles);
+
             $script .= 'if [ -d "' . $template . '" ]; then ${IONICE}rm -rf "' . $template . '"; fi' . "\n";
             $this->addLogline('app_server.log', 'Server template ' . $serverDir . $template . ' owned by user ' . $this->appServerDetails['userNameExecute'] . ' deleted');
+
+            $script .= $this->restoreSpareFiles($template);
         }
 
         $this->addLinuxScript($scriptName, $script);
     }
 
-    public function removeApp ($templates) {
+    public function removeApp($templates, $spareFiles = array()) {
 
         if ($this->appServerDetails) {
 
@@ -738,14 +773,14 @@ class AppServer {
 
             if (count($templates) > 0) {
                 if ($this->appMasterServerDetails['os'] == 'L') {
-                    $this->linuxRemoveApp($templates);
+                    $this->linuxRemoveApp($templates, $spareFiles);
                 } else if ($this->appMasterServerDetails['os'] == 'W') {
                 }
             }
         }
     }
 
-    private function linuxMcWorldSave ($standalone = true) {
+    private function linuxMcWorldSave($standalone = true) {
 
         $screenName = $this->appServerDetails['serverIP'] . '_' . $this->appServerDetails['port'];
         $scriptName = $this->removeSlashes('/home/' . $this->appMasterServerDetails['ssh2User'] . '/temp/worldsave-' . $this->appServerDetails['userNameExecute'] . '-' . $this->appServerDetails['serverIP'] . '-' . $this->appServerDetails['port'] . '.sh');
@@ -896,11 +931,93 @@ class AppServer {
         }
     }
 
-    private function protectedSettingsToArray () {
+    private function replaceValue($customColumns, $replaceSettings, $value) {
 
+        if (is_string($value) and strpos($value, '%') !== false) {
+            $value = str_replace($replaceSettings['placeholder'], $replaceSettings['replacePlaceholderWith'], $value);
+        }
+
+        foreach ($customColumns as $customColumn) {
+            $value = str_replace('%' . $customColumn['name'] . '%', $customColumn['value'], $value);
+        }
+
+        // Check if it is a numeric value but a string and convert
+        if (is_numeric($value) and gettype($value) == "string") {
+            $value = (int) $value;
+        }
+
+        return $value;
+    }
+
+    private function protectedYaml($replaceSettings, $parsedConfig) {
+
+        $customColumns = customColumns('G', $this->appServerDetails['id']);
+
+        foreach ($parsedConfig as $key => $value) {
+
+            if (is_array($value) or is_object($value)) {
+                $parsedConfig[$key] = $this->protectedYaml($replaceSettings, $value);
+            } else {
+                $parsedConfig[$key] = $this->replaceValue($customColumns, $replaceSettings, $value);
+            }
+        }
+
+        return $parsedConfig;
+    }
+
+    private function protectedXML($replaceSettings, $parsedConfig) {
+
+        $customColumns = customColumns('G', $this->appServerDetails['id']);
+
+        foreach ($parsedConfig as $key => $value) {
+
+            if (is_object($value)) {
+
+                foreach ($value->attributes() as $k => $v) {
+                    $value->attributes()->$k = $this->replaceValue($customColumns, $replaceSettings, (string) $v);
+                }
+
+            } else if (is_array($value)) {
+
+                $parsedConfig[$key] = $this->protectedXML($replaceSettings, $value);
+
+            } else {
+                $parsedConfig[$key] = $this->replaceValue($customColumns, $replaceSettings, $value);
+            }
+        }
+
+        return $parsedConfig;
+    }
+
+    private function xmlStringToObject($xml) {
+
+        try {
+
+            if (strpos($xml, '<?xml') === false) {
+                $xml = '<?xml version="1.0"?><xml>' . $xml . '</xml>';
+            }
+
+            return new SimpleXMLElement($xml);
+
+        } catch (Exception $e) {
+            return new stdClass;
+        }
+    }
+
+    private function parseYML($string) {
+        try {
+            return Yaml::parse($string);
+        } catch (Exception $e) {
+            return new stdClass;
+        }
+    }
+
+    private function protectedSettingsToArray() {
+
+        $protectedString = '';
         $cvarProtectArray = array();
         $lendServerReplaceMents = array();
-        $debugger= array();
+        $debugger = array();
 
         $replaceSettings = $this->getReplacements();
         @parse_ini_string($this->appServerDetails['template']['configedit'], true, INI_SCANNER_RAW);
@@ -909,7 +1026,15 @@ class AppServer {
 
             $line = str_replace(array("\r"), '', $line);
 
-            if (preg_match('/^(\[[\w\/\.\-\_]{1,}\]|\[[\w\/\.\-\_]{1,}\] (xml|ini|cfg|lua|json|ddot|yml|yaml))$/', $line)) {
+            if (preg_match('/^(\[[\w\/\.\-\_]{1,}\]|\[[\w\/\.\-\_]{1,}\] (xml|ini|cfg|lua|json|ddot|yml|Yaml|yaml))$/', $line)) {
+
+                if (strlen($protectedString) > 0 and isset($configPathAndFile) and !isset($cvarProtectArray[$configPathAndFile]['cvars'])) {
+                    if (in_array($cvarProtectArray[$configPathAndFile]['type'], array('yml', 'yaml', 'Yaml'))) {
+                        $cvarProtectArray[$configPathAndFile]['cvars'] = $this->protectedYaml($replaceSettings, $this->parseYML($protectedString));
+                    } else if ($cvarProtectArray[$configPathAndFile]['type'] == 'xml') {
+                        $cvarProtectArray[$configPathAndFile]['cvars'] = $this->protectedXML($replaceSettings, $this->xmlStringToObject($protectedString));
+                    }
+                }
 
                 $exploded = preg_split("/\s+/", $line, -1, PREG_SPLIT_NO_EMPTY);
 
@@ -919,6 +1044,8 @@ class AppServer {
 
                 $cvarProtectArray[$configPathAndFile]['type'] = $cvarType;
 
+                $protectedString = '';
+
             } else if (isset($configPathAndFile) and isset($cvarProtectArray[$configPathAndFile]['type'])) {
 
                 unset($splitLine);
@@ -926,10 +1053,10 @@ class AppServer {
                 if ($cvarProtectArray[$configPathAndFile]['type'] == 'cfg') {
 
                     $splitLine = preg_split("/\s+/", $line, -1, PREG_SPLIT_NO_EMPTY);
+                    //TODO
+                } else if (in_array($cvarProtectArray[$configPathAndFile]['type'], array('yml','yaml','Yaml'/*,'xml'*/))) {
 
-                }  else if ($cvarProtectArray[$configPathAndFile]['type'] == 'yml' or $cvarProtectArray[$configPathAndFile]['type'] == 'yaml') {
-
-                    $splitLine = preg_split("/(?:(?<!-))\s*:\s*/", $line);
+                    $protectedString .= $line . "\r\n";
 
                  } else if (in_array($cvarProtectArray[$configPathAndFile]['type'], array('ini','lua'))) {
 
@@ -939,6 +1066,7 @@ class AppServer {
 
                     $splitLine = preg_split("/:/", $line, -1, PREG_SPLIT_NO_EMPTY);
 
+                    //TODO
                 // In case of XML configs the splitting is more complicated
                 } else if ($cvarProtectArray[$configPathAndFile]['type'] == 'xml') {
 
@@ -975,6 +1103,17 @@ class AppServer {
             } else {
                 $debugger[] = 'The sorry rest: ' . $line;
             }
+        }
+
+        if (strlen($protectedString) > 0 and isset($configPathAndFile) and !isset($cvarProtectArray[$configPathAndFile]['cvars'])) {
+            if (in_array($cvarProtectArray[$configPathAndFile]['type'], array('yml', 'yaml', 'Yaml'))) {
+
+                $cvarProtectArray[$configPathAndFile]['cvars'] = $this->protectedYaml($replaceSettings, $this->parseYML($protectedString));
+
+                //TODO
+            }/* else if ($cvarProtectArray[$configPathAndFile]['type'] == 'xml') {
+                $cvarProtectArray[$configPathAndFile]['cvars'] = $this->protectedXML($replaceSettings, $this->xmlStringToObject($protectedString));
+            }*/
         }
 
         if ($this->appServerDetails['lendServer'] == 'Y') {
@@ -1047,15 +1186,23 @@ class AppServer {
         foreach(array_keys($givenArray) as $key) {
 
             if (is_array($givenArray[$key])) {
-                $givenArray[$key] = $this->replaceArrayValues($givenArray[$key], $replacements);
-            }
 
-            if (isset($this->undefinedRequiredVars[$key])) {
-                unset($this->undefinedRequiredVars[$key]);
-            }
+                $givenArray[$key] = $this->replaceArrayValues($givenArray[$key], ((is_array($replacements) or is_object($replacements)) and isset($replacements[$key])) ? $replacements[$key] : $replacements);
 
-            if (isset($replacements[$key])) {
-                $givenArray[$key] = $replacements[$key];
+            } else {
+
+                if (isset($this->undefinedRequiredVars[$key])) {
+                    unset($this->undefinedRequiredVars[$key]);
+                }
+
+                if (isset($replacements[$key])) {
+                    $givenArray[$key] = $replacements[$key];
+                }
+
+                // Check if it is a numeric value but a string and convert
+                if (is_numeric($givenArray[$key]) and gettype($givenArray[$key]) == "string") {
+                    $givenArray[$key] = (int) $givenArray[$key];
+                }
             }
         }
 
@@ -1119,6 +1266,22 @@ class AppServer {
         return $iniString;
     }
 
+    private function addNotFoundVars($replacedArray, $key, $value) {
+
+        if (!isset($replacedArray[$key]) or (!is_array($replacedArray[$key]) and !is_object($replacedArray[$key]))) {
+
+            $replacedArray[$key] = $value;
+
+        } else {
+
+            foreach ($replacedArray[$key] as $k => $v) {
+                $replacedArray[$key] = $this->addNotFoundVars($replacedArray[$key], $k, $v);
+            }
+        }
+
+        return $replacedArray;
+    }
+
     private function replaceArray($stored, $replacements) {
 
         if (!$stored) {
@@ -1128,14 +1291,24 @@ class AppServer {
         $replacedArray = $this->replaceArrayValues($stored, $replacements);
 
         foreach ($this->undefinedRequiredVars as $key => $value) {
-            $replacedArray[$key] = $value;
+            $replacedArray = $this->addNotFoundVars($replacedArray, $key, $value);
         }
 
         return $replacedArray;
     }
 
     private function replaceYaml($stored, $replacements) {
-        return Spyc::YAMLDump($this->replaceArray($stored, $replacements));
+        return Yaml::dump($this->replaceArray($stored, $replacements), 2, 4);
+    }
+
+    //TODO: Replace XML objects
+    private function replaceXML($stored, $replacements) {
+
+        if (!$stored) {
+            $stored = new SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?>');
+        }
+
+        return $stored->asXML();
     }
 
     private function replaceJSON($stored, $replacements) {
@@ -1159,21 +1332,20 @@ class AppServer {
                 foreach ($protectedConfigs as $config => $values) {
 
                     $fileWithPath = $this->appServerDetails['absoluteFTPPath'] . '/' . $config;
-
                     $fileAndPath = $this->getFileAndPathName($fileWithPath);
-
-                    $path = $fileAndPath['path'];
-                    $fileName = $fileAndPath['file'];
 
                     if (!$ftpObect->downloadToTemp($fileWithPath)) {
 
-                        $fileWithPath = $this->appServerDetails['absoluteFTPPathNoChroot'] . '/' . $config;
+                        $noChrootfileWithPath = $this->appServerDetails['absoluteFTPPathNoChroot'] . '/' . $config;
+                        $noChrootfileAndPath = $this->getFileAndPathName($noChrootfileWithPath);
 
-                        $fileAndPath = $this->getFileAndPathName($fileWithPath);
-
-                        $path = $fileAndPath['path'];
-                        $fileName = $fileAndPath['file'];
+                        if ($ftpObect->downloadToTemp($noChrootfileAndPath)) {
+                            $fileAndPath = $noChrootfileAndPath;
+                        }
                     }
+
+                    $path = $fileAndPath['path'];
+                    $fileName = $fileAndPath['file'];
 
                     $configFileContent = $ftpObect->getTempFileContent();
 
@@ -1186,16 +1358,14 @@ class AppServer {
 
                         $ftpObect->writeContentToTemp($this->replaceIni(@parse_ini_string($configFileContent, false, INI_SCANNER_RAW), $values['cvars']));
 
-                    } else if ($values['type'] === 'yml' or $values['type'] === 'yaml') {
+                    } else if ($values['type'] === 'yml' or $values['type'] === 'Yaml' or $values['type'] === 'yaml') {
 
-                        if (!class_exists('Spyc')) {
-                            include(EASYWIDIR . '/third_party/spyc/Spyc.php');
-                        }
+                        $ftpObect->writeContentToTemp($this->replaceYaml($this->parseYML($configFileContent), $values['cvars']));
+                        //TODO
+/*                    } else if ($values['type'] === 'xml') {
 
-                        $parsedConfig = Spyc::YAMLLoadString($configFileContent);
-
-                        $ftpObect->writeContentToTemp($this->replaceYaml($parsedConfig, $values['cvars']));
-
+                        $ftpObect->writeContentToTemp($this->replaceXML(new SimpleXMLElement($configFileContent), $values['cvars']));
+*/
                     } else if ($values['type'] == 'json') {
 
                         $ftpObect->writeContentToTemp($this->replaceJSON(@parse_ini_string(@json_decode($configFileContent), false, INI_SCANNER_RAW), $values['cvars']));
@@ -1206,9 +1376,7 @@ class AppServer {
                             include(EASYWIDIR . '/stuff/methods/class_lua.php');
                         }
 
-                        $parsedConfig = Lua::luaToArray($configFileContent);
-
-                        $ftpObect->writeContentToTemp($this->replaceLua($parsedConfig, $values['cvars']));
+                        $ftpObect->writeContentToTemp($this->replaceLua(Lua::luaToArray($configFileContent), $values['cvars']));
 
                     } else {
 
@@ -1477,8 +1645,11 @@ class AppServer {
             $shellCommand = '';
 
         } else {
-            $shellCommand = ($this->appServerDetails['useTaskSet'] == 'Y' and strlen($this->appServerDetails['cores']) > 0) ? 'taskset -c ' . $this->appServerDetails['cores'] : '';
-            $shellCommand .= ' screen -A -m -d -L -S ' . $this->appServerDetails['serverIP'] . '_' . $this->appServerDetails['port'] . ' ' . $startCommand;
+            $shellCommand = 'if [ "`screen -v | awk \'{split($3, a, "."); print a[2]}\'`" == "05" ]; then' . "\n";
+            $shellCommand .= 'SCREENLOG="screenlog.0"' . "\n";
+            $shellCommand .= 'fi' . "\n";
+            $shellCommand .= ($this->appServerDetails['useTaskSet'] == 'Y' and strlen($this->appServerDetails['cores']) > 0) ? 'taskset -c ' . $this->appServerDetails['cores'] . ' ' : '';
+            $shellCommand .= 'screen -A -m -d -L $SCREENLOG -S ' . $this->appServerDetails['serverIP'] . '_' . $this->appServerDetails['port'] . ' ' . $startCommand . "\n";
         }
 
         return $shellCommand;
@@ -1514,7 +1685,7 @@ class AppServer {
         $serverDir = $this->appServerDetails['homeDir'] . '/' . $this->appServerDetails['userName'];
         $serverDir .= ($this->appServerDetails['protectionModeStarted'] == 'Y') ? '/pserver/' : '/server/';
         $serverDir = $this->removeSlashes($serverDir);
-        $serverTemplateDir = $this->removeSlashes($serverDir . '/' . $this->appServerDetails['serverIP'] . '_' . $this->appServerDetails['port'] . '/');
+        $serverTemplateDir = $this->removeSlashes($serverDir . '/');
 
         $script = $this->shellScriptHeader;
         $script .= 'rm -f ' . $scriptName . "\n";
@@ -1543,8 +1714,15 @@ class AppServer {
                 $script .= '${IONICE}nice -n +19 find ' . $serverDir . ' -type f ! -name "ShooterGameServer" -print0 | xargs -0 chmod 600' . "\n";
             }
 
-            $script .= '${IONICE}nice -n +19 find ' . $this->removeSlashes($this->appServerDetails['homeDir'] . '/' . $this->appServerDetails['userName']) . ' -mindepth 2 -maxdepth 3 \( -type f -or -type l \)';
-            $script .= ' ! -name "*.tar.bz2" ! -name "steamclient.so" ! -path "' . $this->removeSlashes($this->appServerDetails['homeDir'] . '/' . $this->appServerDetails['userName']) . '/backup/*" -delete' . "\n";
+            // Remove files where they do not belong
+            $script .= '${IONICE}nice -n +19 find ' . $serverDir . ' -mindepth 1 -maxdepth 1 \( -type f -or -type l \) -delete' . "\n";
+            $script .= '${IONICE}nice -n +19 find ' . $this->removeSlashes($this->appServerDetails['homeDir'] . '/' . $this->appServerDetails['userName']) . ' -mindepth 1 -maxdepth 1 \( -type f -or -type l \)';
+            $script .= ' ! -name ".profile" ! -name ".bashrc" ! -name ".bash_logout" -delete' . "\n";
+
+            // Remove folders where they do not belong
+            $script .= '${IONICE}nice -n +19 find ' . $this->removeSlashes($this->appServerDetails['homeDir'] . '/' . $this->appServerDetails['userName']) . ' -mindepth 1 -maxdepth 1 -type d';
+            $script .= ' ! -name ".steam" ! -name "pserver" ! -name "backup" ! -name "fdl_data" ! -name "server" -print0 | xargs -0 rm -rf' . "\n";
+
             $script .= '${IONICE}nice -n +19 find /home/' . $this->appMasterServerDetails['ssh2User'] . '/fdl_data -type f -user `whoami` ! -name "*.bz2" -delete' . "\n";
         }
 
@@ -2024,7 +2202,7 @@ class AppServer {
 
     private function linuxMigrateServer ($sourceFTP, $targetTemplate, $modFolder) {
 
-        $serverDir = $this->removeSlashes($this->appServerDetails['homeDir'] . '/' . $this->appServerDetails['userName'] . '/server/' . $this->appServerDetails['serverIP'] . '_' . $this->appServerDetails['port'] . '/' . $targetTemplate . '/');
+        $serverDir = $this->removeSlashes($this->appServerDetails['homeDir'] . '/' . $this->appServerDetails['userName'] . '/server/' . '/' . $targetTemplate . '/');
 
         $scriptName = $this->removeSlashes('/home/' . $this->appMasterServerDetails['ssh2User'] . '/temp/migrate-' . $this->appServerDetails['userName'] . '-' . $this->appServerDetails['serverIP'] . '-' . $this->appServerDetails['port'] . '.sh');
 
@@ -2198,7 +2376,7 @@ class AppServer {
 
         $backupDir = $this->removeSlashes($this->appServerDetails['homeDir'] .'/' . $this->appServerDetails['userName'] . '/backup/');
         $backUpFile = $this->removeSlashes($backupDir . '/' . $this->appServerDetails['serverIP'] . '_' . $this->appServerDetails['port'] . '-$GAMETEMPLATE.tar.bz2');
-        $serverDir = $this->removeSlashes($this->appServerDetails['homeDir'] .'/' . $this->appServerDetails['userName'] . '/server/' . $this->appServerDetails['serverIP'] . '_' . $this->appServerDetails['port'] . '/');
+        $serverDir = $this->removeSlashes($this->appServerDetails['homeDir'] .'/' . $this->appServerDetails['userName'] . '/server/');
 
         $scriptName = $this->removeSlashes('/home/' . $this->appMasterServerDetails['ssh2User'] . '/temp/backup-create-' . $this->appServerDetails['userName'] . '-' . $this->appServerDetails['serverIP'] . '-' . $this->appServerDetails['port'] . '.sh');
 
@@ -2236,7 +2414,7 @@ class AppServer {
         global $resellerLockupID;
 
         $backupDir = $this->removeSlashes($this->appServerDetails['homeDir'] . $this->appServerDetails['userName'] . '/backup/');
-        $serverDir = $this->removeSlashes($this->appServerDetails['homeDir'] . $this->appServerDetails['userName'] . '/server/' . $this->appServerDetails['serverIP'] . '_' . $this->appServerDetails['port'] . '/');
+        $serverDir = $this->removeSlashes($this->appServerDetails['homeDir'] . $this->appServerDetails['userName'] . '/server/');
 
         $scriptName = $this->removeSlashes('/home/' . $this->appMasterServerDetails['ssh2User'] . '/temp/backup-deploy-' . $this->appServerDetails['userName'] . '-' . $this->appServerDetails['serverIP'] . '-' . $this->appServerDetails['port'] . '.sh');
 

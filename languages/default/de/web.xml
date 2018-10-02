@@ -11,6 +11,9 @@
     <error_password_not_match>FTP Passwörter stimmen nicht überein</error_password_not_match>
     <error_password_not_set>FTP Passwort unzulässig, nicht angegeben, oder Wiederholung nicht angegeben.</error_password_not_set>
     <fdlInfo>FastDL Info</fdlInfo>
+    <fpmCmd>PHP FPM Start/Reload Befehl</fpmCmd>
+    <fpmConfigPath>PHP FPM Config Pfad</fpmConfigPath>
+    <fpmTemplate>PHP FPM Template</fpmTemplate>
     <ftpIP>FTP Adresse</ftpIP>
     <ftpPassword>FTP Passwort</ftpPassword>
     <ftpPasswordChanged>FTP Passwort geändert</ftpPasswordChanged>
@@ -28,7 +31,7 @@
     <help_inode_block_ratio>Bei den meisten Systemen ist das Verhältnis 4. D.h. auf 4 Blöcke kommt ein Inode</help_inode_block_ratio>
     <help_web_master>Achtung, es wird empfohlen den Host ausschließlich für Fastdownload zu nutzen. Andere Panels und Dienste könnten ansonsten Konflikte und Probleme verursachen. Des Weiteren verursacht Fastdownload regelmäßige Lastspitzen in der Bandbreite, die andere Serverdienste zum Laggen bringen können.</help_web_master>
     <httpdCmd>HTTPD Start/Reload Befehl</httpdCmd>
-    <inodeBlockRatio>Block/Inode Verhätnis</inodeBlockRatio>
+    <inodeBlockRatio>Block/Inode Verhältnis</inodeBlockRatio>
     <installedHDD>Zugewiesene HDD</installedHDD>
     <installedVhost>Installierte Vhosts</installedVhost>
     <maxHDD>Vorhandener Speicherplatz</maxHDD>
@@ -36,6 +39,7 @@
     <optional>(optional)</optional>
     <other>Andere</other>
     <overbookPercent>Überbuchen um</overbookPercent>
+    <ownFPM>Eigenes PHP FPM Template</ownFPM>
     <ownVhost>Eigenes Vhosttemplate</ownVhost>
     <path>Pfad</path>
     <pathCorrected>Pfad von %pathGiven% zu %pathConverted% zur Domain %domain% korrigiert</pathCorrected>
@@ -50,6 +54,7 @@
     <usageType>Vhostgebrauch</usageType>
     <userGroup>Webserver Gruppe</userGroup>
     <userAddCmd>Hinzufügen Befehl</userAddCmd>
+    <useDefaultFPM>Benutze Standard PHP FPM Template</useDefaultFPM>
     <userDelCmd>Löschen Befehl</userDelCmd>
     <userModCmd>Bearbeiten Befehl</userModCmd>
     <vhostConfigPath>Vhost Config Speicherpfad</vhostConfigPath>

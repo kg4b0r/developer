@@ -18,26 +18,14 @@
 
 namespace GameQ\Protocols;
 
-use GameQ\Protocol;
-use GameQ\Buffer;
-
 /**
- * Battlefield 2 Protocol Class
+ * Class Battlefield 2
  *
  * @package GameQ\Protocols
  * @author  Austin Bischoff <austin@codebeard.com>
  */
 class Bf2 extends Gamespy3
 {
-
-    /**
-     * Array of packets we want to query.
-     *
-     * @type array
-     */
-    protected $packets = [
-        self::PACKET_ALL => "\xFE\xFD\x00\x10\x20\x30\x40\xFF\xFF\xFF\x01",
-    ];
 
     /**
      * String name of this protocol class
@@ -52,4 +40,59 @@ class Bf2 extends Gamespy3
      * @type string
      */
     protected $name_long = "Battlefield 2";
+
+    /**
+     * query_port = client_port + 8433
+     * 29900 = 16567 + 13333
+     *
+     * @type int
+     */
+    protected $port_diff = 13333;
+
+    /**
+     * The client join link
+     *
+     * @type string
+     */
+    protected $join_link = "bf2://%s:%d";
+
+    /**
+     * BF2 has a different query packet to send than "normal" Gamespy 3
+     *
+     * @var array
+     */
+    protected $packets = [
+        self::PACKET_ALL => "\xFE\xFD\x00\x10\x20\x30\x40\xFF\xFF\xFF\x01",
+    ];
+
+    /**
+     * Normalize settings for this protocol
+     *
+     * @type array
+     */
+    protected $normalize = [
+        // General
+        'general' => [
+            // target       => source
+            'dedicated'  => 'dedicated',
+            'gametype'   => 'gametype',
+            'hostname'   => 'hostname',
+            'mapname'    => 'mapname',
+            'maxplayers' => 'maxplayers',
+            'numplayers' => 'numplayers',
+            'password'   => 'password',
+        ],
+        // Individual
+        'player'  => [
+            'name'   => 'player',
+            'kills'  => 'score',
+            'deaths' => 'deaths',
+            'ping'   => 'ping',
+            'score'  => 'score',
+        ],
+        'team'    => [
+            'name'  => 'team',
+            'score' => 'score',
+        ],
+    ];
 }

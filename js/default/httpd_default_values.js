@@ -44,7 +44,14 @@ function loadServerSettings (serverType, usageType) {
 
         defaultRestartCMD = 'sudo /etc/init.d/nginx reload';
 
+        /* Add redirect from www. -> non www. */
         defaultVhostTemplate = 'server {\r\n';
+        defaultVhostTemplate += '   listen 80;\r\n';
+        defaultVhostTemplate += '   server_name www.%domain%;\r\n';
+        defaultVhostTemplate += '   return 301 $scheme://%domain%$request_uri;\r\n';
+        defaultVhostTemplate += '}\r\n';
+
+        defaultVhostTemplate += 'server {\r\n';
         defaultVhostTemplate += '   listen 80;\r\n';
         defaultVhostTemplate += '   server_name %domain%;\r\n';
         defaultVhostTemplate += '   autoindex off;\r\n';
@@ -61,19 +68,10 @@ function loadServerSettings (serverType, usageType) {
             defaultVhostTemplate += '   }\r\n';
 
             defaultVhostTemplate += '   location ~ \.php$ {\r\n';
-            defaultVhostTemplate += '      #       fastcgi_split_path_info ^(.+\.php)(/.+)$;\r\n';
-            defaultVhostTemplate += '      #       # NOTE: You should have "cgi.fix_pathinfo = 0;" in php.ini\r\n';
-            defaultVhostTemplate += '      #\r\n';
-            defaultVhostTemplate += '      # With php5-cgi alone:\r\n';
-            defaultVhostTemplate += '      # fastcgi_pass 127.0.0.1:9000;\r\n';
-            defaultVhostTemplate += '      # With php5-fpm:\r\n';
-            defaultVhostTemplate += '      fastcgi_pass unix:/var/run/php5-fpm.sock;\r\n';
-            defaultVhostTemplate += '      # With php7-fpm:\r\n';
-            defaultVhostTemplate += '      # fastcgi_pass unix:/var/run/php7.0-fpm.sock;\r\n';
+            defaultVhostTemplate += '      fastcgi_pass unix:/var/run/php-fpm-%user%.sock;\r\n';
             defaultVhostTemplate += '      include fastcgi.conf;\r\n';
             defaultVhostTemplate += '      fastcgi_index index.php;\r\n';
             defaultVhostTemplate += '      include fastcgi_params;\r\n';
-            defaultVhostTemplate += '      fastcgi_param  PHP_VALUE "open_basedir=%vhostpath%/%user%/%htdocs%/%path%:%vhostpath%/%user%/tmp\nsession.save_path=%vhostpath%/%user%/sessions\nupload_tmp_dir=%vhostpath%/%user%/tmp\nallow_url_fopen=Off\nallow_url_include=Off\n%phpConfiguration%";\r\n';
             defaultVhostTemplate += '   }\r\n';
 
         } else {
@@ -89,7 +87,13 @@ function loadServerSettings (serverType, usageType) {
 
         defaultRestartCMD = 'sudo /etc/init.d/apache2 reload';
 
+        /* Add redirect from www. -> non www. */
         defaultVhostTemplate = '<VirtualHost *:80>\r\n';
+        defaultVhostTemplate += '    ServerName www.%domain%\r\n';
+        defaultVhostTemplate += '    Redirect 301 / http://%domain%/\r\n';
+        defaultVhostTemplate += '</VirtualHost>\r\n';
+
+        defaultVhostTemplate += '<VirtualHost *:80>\r\n';
         defaultVhostTemplate += '    ServerAdmin %email%\r\n';
         defaultVhostTemplate += '    DocumentRoot "%vhostpath%/%user%/%htdocs%/%path%"\r\n';
         defaultVhostTemplate += '    ServerName %domain%\r\n';
@@ -157,4 +161,15 @@ function loadServerSettings (serverType, usageType) {
 
     document.getElementById("inputHttpdCmd").value = defaultRestartCMD;
     document.getElementById("inputVhostTemplate").value = defaultVhostTemplate;
+
+    showHideFPM(Boolean((serverType == 'N' || serverType == 'L') && usageType == 'W'));
+}
+
+function showHideFPM(bVisible) {
+
+    if (bVisible === true) {
+        $(".fpmSupport").show();
+    } else {
+        $(".fpmSupport").hide();
+    }
 }

@@ -90,6 +90,7 @@ if ($ui->w('action', 4, 'post') and !token(true)) {
 
             $table = getUserList($resellerLockupID);
             $table2 = getAppMasterList($resellerLockupID);
+            $description = '';
 
             $template_file = 'admin_gserver_add.tpl';
 
@@ -369,7 +370,7 @@ if ($ui->w('action', 4, 'post') and !token(true)) {
             if ($ui->st('action', 'post') == 'ad') {
 
                 $query = $sql->prepare("INSERT INTO `gsswitch` (`description`,`active`,`hdd`,`taskset`,`cores`,`userid`,`pallowed`,`eacallowed`,`lendserver`,`serverip`,`rootID`,`homeLabel`,`tvenable`,`port`,`port2`,`port3`,`port4`,`port5`,`minram`,`maxram`,`slots`,`war`,`brandname`,`autoRestart`,`updateRestart`,`ftppassword`,`ppassword`,`resellerid`,`serverid`,`stopped`,`externalID`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,AES_ENCRYPT(?,?),AES_ENCRYPT(?,?),?,1,'Y',?)");
-                $query->execute(array($description, $active, $hdd, $ui->active('taskset', 'post'), $usedCores, $userID, $protectionAllowed, $eacAllowed, $lendServer, $ip, $rootID, $homeLabel, $tvEnable, $port, $ui->port('port2', 'post'), $ui->port('port3', 'post'), $ui->port('port4', 'post'), $ui->port('port5', 'post'), $minRam, $maxRam, $slots, $war, $brandname, $autoRestart, $updateRestart, $ftpPassword, $aeskey, passwordgenerate(10), $aeskey, $resellerLockupID, $externalID));
+                $query->execute(array($description, $active, $hdd, $ui->active('taskset', 'post'), $usedCores, $userID, $protectionAllowed, $eacAllowed, $lendServer, $ip, $rootID, $homeLabel, $tvEnable, $port, getNumberNull('port2'), getNumberNull('port3'), getNumberNull('port4'), getNumberNull('port5'), $minRam, $maxRam, $slots, $war, $brandname, $autoRestart, $updateRestart, $ftpPassword, $aeskey, passwordgenerate(10), $aeskey, $resellerLockupID, $externalID));
 
                 $id = $sql->lastInsertId();
 
@@ -438,7 +439,7 @@ if ($ui->w('action', 4, 'post') and !token(true)) {
                 }
 
                 $query = $sql->prepare("UPDATE `gsswitch` SET `description`=?,`active`=?,`hdd`=?,`taskset`=?,`cores`=?,`pallowed`=?,`eacallowed`=?,`lendserver`=?,`serverip`=?,`homeLabel`=?,`tvenable`=?,`port`=?,`port2`=?,`port3`=?,`port4`=?,`port5`=?,`minram`=?,`maxram`=?,`slots`=?,`war`=?,`brandname`=?,`autoRestart`=?,`updateRestart`=?,`ftppassword`=AES_ENCRYPT(?,?),`serverid`=?,`externalID`=? WHERE `id`=? AND `resellerid`=? LIMIT 1");
-                $query->execute(array($description, $active, $hdd, $ui->active('taskset', 'post'), $usedCores, $protectionAllowed, $eacAllowed, $lendServer, $ip, $homeLabel, $tvEnable, $port, $ui->port('port2', 'post') ? $ui->port('port2', 'post') : null, $ui->port('port3', 'post') ? $ui->port('port3', 'post') : null, $ui->port('port4', 'post') ? $ui->port('port4', 'post') : null, $ui->port('port5', 'post') ? $ui->port('port5', 'post') : null, $minRam, $maxRam, $slots, $war, $brandname, $autoRestart, $updateRestart, $ftpPassword, $aeskey, $currentActiveGame, $externalID, $id, $resellerLockupID));
+                $query->execute(array($description, $active, $hdd, $ui->active('taskset', 'post'), $usedCores, $protectionAllowed, $eacAllowed, $lendServer, $ip, $homeLabel, $tvEnable, $port, getNumberNull('port2'), getNumberNull('port3'), getNumberNull('port4'), getNumberNull('port5'), $minRam, $maxRam, $slots, $war, $brandname, $autoRestart, $updateRestart, $ftpPassword, $aeskey, $currentActiveGame, $externalID, $id, $resellerLockupID));
 
                 $rowCount += $query->rowCount();
 
@@ -491,13 +492,6 @@ if ($ui->w('action', 4, 'post') and !token(true)) {
                 if ($gamesRemoveAmount > 0) {
                     $loguseraction .= ', %del%: ' . implode(', ', $gamesToBeRemoved);
                 }
-
-                // Admin has changed the ip or the main port. Now we need to move the server. Can only happen during server edit.
-                // Should be done after possible deletes and before we add additional data
-                if ($ui->st('action', 'post') == 'md' and  ($ip != $oldIp or $port != $oldPort)) {
-                    $appServer->moveServerLocal($oldIp, $oldPort);
-                }
-
 
                 if ($gamesAmount > 0) {
 
@@ -603,7 +597,7 @@ if ($ui->w('action', 4, 'post') and !token(true)) {
 
             $template_file = $spracheResponse->table_del;
 
-            if (isset($dbConnect['debug']) and $dbConnect['debug'] == 1) {
+            if (isset($dbConnect['debug']) and $dbConnect['debug'] == 1 and in_array($ui->w('safeDelete', 1, 'post'), array('S', 'D'))) {
                 $template_file .= '<br><pre>' . implode("\r\n", $appServer->debug()) . '</pre>';
             }
 

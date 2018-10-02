@@ -74,6 +74,14 @@ class Gamespy3 extends Protocol
     protected $join_link = null;
 
     /**
+     * This defines the split between the server info and player/team info.
+     * This value can vary by game. This value is the default split.
+     *
+     * @var string
+     */
+    protected $packetSplit = "/\\x00\\x00\\x01/m";
+
+    /**
      * Parse the challenge response and apply it to all the packet types
      *
      * @param \GameQ\Buffer $challenge_buffer
@@ -83,16 +91,23 @@ class Gamespy3 extends Protocol
      */
     public function challengeParseAndApply(Buffer $challenge_buffer)
     {
-
         // Pull out the challenge
         $challenge = substr(preg_replace("/[^0-9\-]/si", "", $challenge_buffer->getBuffer()), 1);
-        $challenge_result = sprintf(
-            "%c%c%c%c",
-            ($challenge >> 24),
-            ($challenge >> 16),
-            ($challenge >> 8),
-            ($challenge >> 0)
-        );
+
+        // By default, no challenge result (see #197)
+        $challenge_result = '';
+
+        // Check for valid challenge (see #197)
+        if ($challenge) {
+            // Encode chellenge result
+            $challenge_result = sprintf(
+                "%c%c%c%c",
+                ($challenge >> 24),
+                ($challenge >> 16),
+                ($challenge >> 8),
+                ($challenge >> 0)
+            );
+        }
 
         // Apply the challenge and return
         return $this->challengeApply($challenge_result);
@@ -107,7 +122,7 @@ class Gamespy3 extends Protocol
     {
 
         // Holds the processed packets
-        $processed = [ ];
+        $processed = [];
 
         // Iterate over the packets
         foreach ($this->packets_response as $response) {
@@ -141,17 +156,23 @@ class Gamespy3 extends Protocol
         // Offload cleaning up the packets if they happen to be split
         $packets = $this->cleanPackets(array_values($processed));
 
-        // Create a new buffer
-        $buffer = new Buffer(implode('', $packets), Buffer::NUMBER_TYPE_BIGENDIAN);
+        // Split the packets by type general and the rest (i.e. players & teams)
+        $split = preg_split($this->packetSplit, implode('', $packets));
 
         // Create a new result
         $result = new Result();
 
-        // Parse the server details
+        // Assign variable due to pass by reference in PHP 7+
+        $buffer = new Buffer($split[0], Buffer::NUMBER_TYPE_BIGENDIAN);
+
+        // First key should be server details and rules
         $this->processDetails($buffer, $result);
 
-        // Parse the player and team information
-        $this->processPlayersAndTeams($buffer, $result);
+        // The rest should be the player and team information, if it exists
+        if (array_key_exists(1, $split)) {
+            $buffer = new Buffer($split[1], Buffer::NUMBER_TYPE_BIGENDIAN);
+            $this->processPlayersAndTeams($buffer, $result);
+        }
 
         unset($buffer);
 
@@ -169,7 +190,7 @@ class Gamespy3 extends Protocol
      *
      * @return array
      */
-    protected function cleanPackets(array $packets = [ ])
+    protected function cleanPackets(array $packets = [])
     {
 
         // Get the number of packets
@@ -289,7 +310,7 @@ class Gamespy3 extends Protocol
                 // Set the item group
                 $item_group = 'teams';
                 // Set the item type, rip off any trailing stuff and bad chars
-                $item_type = rtrim(str_replace([ "\x00", "\x02" ], '', $item), '_t');
+                $item_type = rtrim(str_replace(["\x00", "\x02"], '', $item), '_t');
             } else {
                 // We can assume it is data belonging to a previously defined item
 
