@@ -71,7 +71,8 @@ $languageObject = simplexml_load_file(EASYWIDIR . '/install/' . $menuLanguage . 
 $displayToUser = '';
 $systemCheckOk = array();
 $systemCheckError = array();
-$easyWiVersion = ($developer == 'Y') ? '6.0.4' : '6.0.4';
+$easyWiVersion = ($developer == 'Y') ? '6.0.5' : '6.0.5';
+
 
 if ($currentStep == 0) {
 
@@ -118,10 +119,10 @@ if ($currentStep == 0) {
     foreach ($modules as $module) {
         if (extension_loaded($module)) {
             $okField = "system_ok_$module";
-            $systemCheckOk[$module] = $sprache->$okField;
+            $systemCheckOk[$module] = $languageObject->$okField;
         } else {
             $errorField = "error_system_$module";
-            $systemCheckError[$module] = $sprache->$errorField;
+            $systemCheckError[$module] = $languageObject->$errorField;
         }
     }
 
@@ -130,10 +131,10 @@ if ($currentStep == 0) {
     foreach ($functions as $function) {
         if (function_exists($function)) {
             $okField = "system_ok_$function";
-            $systemCheckOk[$function] = $function->$okField;
+            $systemCheckOk[$function] = $languageObject->$okField;
         } else {
             $errorField = "error_system_$function";
-            $systemCheckError[$function] = $sprache->$errorField;
+            $systemCheckError[$function] = $languageObject->$errorField;
         }
     }
 
@@ -295,9 +296,9 @@ if ($currentStep == 2 and count($systemCheckError) == 0) {
 " . '$user' . " = '" . addcslashes($_POST['user'], "'") . "';
 " . '$db' . " = '" . addcslashes($_POST['db'], "'") . "';
 " . '$pwd' . " = '" . addcslashes($_POST['pwd'], "'") . "';
-" . '$captcha' . " = 0;
+" . '$captcha' . " = '0';
 " . '$title' . " = '';
-" . '$debug' . " = 0;
+" . '$debug' . " = '0';
 " . '$timezone' . " = 'Europe/Berlin';
 ";
 
@@ -753,10 +754,10 @@ if ($currentStep == 7 and count($systemCheckError) == 0) {
 
             $query = $sql->prepare("INSERT INTO `feeds_settings` (`settingsID`,`resellerID`) VALUES (1,0) ON DUPLICATE KEY UPDATE `settingsID`=`settingsID`");
             $query->execute();
-            
+
             $query = $sql->prepare("INSERT INTO `settings_email_category` (`id`, `name`, `reseller_id`) VALUES (1, 'vServer', 0), (2, 'Server', 0), (3, 'Ticket', 0), (4, 'General', 0), (5, 'VoiceServer', 0), (6, 'GameServer', 0) ON DUPLICATE KEY UPDATE `id`=`id`");
             $query->execute();
-           
+
             //Install E-Mail template
             include(EASYWIDIR . '/stuff/data/email_templates.php');
             foreach ($emailTemplates as $template) {
@@ -784,7 +785,7 @@ if ($currentStep == 7 and count($systemCheckError) == 0) {
 " . '$pwd' . " = '" . $pwd . "';
 " . '$captcha' . " = '" . $_POST['captcha'] . "';
 " . '$title' . " = '" . $_POST['title'] . "';
-" . '$debug' . " = 0;
+" . '$debug' . " = '0';
 " . '$timezone' . " = '" . $_POST['timezone'] . "';
 ";
 
@@ -1100,7 +1101,6 @@ if (strlen($displayToUser) == 0 and count($systemCheckError) > 0) {
 </head>
 
 <body>
-t
 <div class="container">
     <div class="header">
         <ul class="nav nav-pills pull-right">
